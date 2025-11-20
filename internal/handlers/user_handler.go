@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/kevinsofyan/echoes-chat-api/internal/services"
 	"github.com/kevinsofyan/echoes-chat-api/internal/utils"
 	"github.com/labstack/echo/v4"
@@ -17,69 +18,6 @@ func NewUserHandler(userService services.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 	}
-}
-
-// Register godoc
-// @Summary Register a new user
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body services.RegisterRequest true "Register Request"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Router /api/v1/auth/register [post]
-func (h *UserHandler) Register(c echo.Context) error {
-	var req services.RegisterRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "Invalid request body",
-		})
-	}
-
-	user, err := h.userService.Register(c.Request().Context(), req)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusCreated, map[string]interface{}{
-		"message": "User registered successfully",
-		"data":    user,
-	})
-}
-
-// Login godoc
-// @Summary Login user
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body services.LoginRequest true "Login Request"
-// @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Router /api/v1/auth/login [post]
-func (h *UserHandler) Login(c echo.Context) error {
-	var req services.LoginRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "Invalid request body",
-		})
-	}
-
-	user, token, err := h.userService.Login(c.Request().Context(), req)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"message": "Login successful",
-		"data": map[string]interface{}{
-			"user":  user,
-			"token": token,
-		},
-	})
 }
 
 // GetMe godoc
@@ -123,14 +61,14 @@ func (h *UserHandler) GetMe(c echo.Context) error {
 // @Failure 404 {object} map[string]interface{}
 // @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUserByID(c echo.Context) error {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Invalid user ID",
 		})
 	}
 
-	user, err := h.userService.GetUserByID(c.Request().Context(), uint(id))
+	user, err := h.userService.GetUserByID(c.Request().Context(), id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]interface{}{
 			"error": err.Error(),
@@ -190,14 +128,14 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 		})
 	}
 
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	targetID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Invalid user ID",
 		})
 	}
 
-	if authUserID != uint(targetID) {
+	if authUserID != targetID {
 		return c.JSON(http.StatusForbidden, map[string]interface{}{
 			"error": "You can only update your own profile",
 		})
@@ -210,7 +148,7 @@ func (h *UserHandler) UpdateUser(c echo.Context) error {
 		})
 	}
 
-	user, err := h.userService.UpdateUser(c.Request().Context(), uint(targetID), req)
+	user, err := h.userService.UpdateUser(c.Request().Context(), targetID, req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": err.Error(),
@@ -243,7 +181,7 @@ func (h *UserHandler) DeleteUser(c echo.Context) error {
 	}
 
 	// Get target user ID from URL parameter
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	targetID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Invalid user ID",
@@ -251,13 +189,13 @@ func (h *UserHandler) DeleteUser(c echo.Context) error {
 	}
 
 	// Check if user is trying to delete their own account
-	if authUserID != uint(targetID) {
+	if authUserID != targetID {
 		return c.JSON(http.StatusForbidden, map[string]interface{}{
 			"error": "You can only delete your own account",
 		})
 	}
 
-	if err := h.userService.DeleteUser(c.Request().Context(), uint(targetID)); err != nil {
+	if err := h.userService.DeleteUser(c.Request().Context(), targetID); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": err.Error(),
 		})

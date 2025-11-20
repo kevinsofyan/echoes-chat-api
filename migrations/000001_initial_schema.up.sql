@@ -5,7 +5,7 @@ CREATE SCHEMA IF NOT EXISTS echoes_chat;
 SET search_path TO echoes_chat;
 
 -- Create users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users  (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE users (
 );
 
 -- Create rooms table
-CREATE TABLE rooms (
+CREATE TABLE IF NOT EXISTS rooms (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
     type VARCHAR(20) NOT NULL DEFAULT 'group' CHECK (type IN ('direct', 'group')),
@@ -34,7 +34,7 @@ CREATE TABLE rooms (
 );
 
 -- Create room_members table
-CREATE TABLE room_members (
+CREATE TABLE IF NOT EXISTS room_members (
     id SERIAL PRIMARY KEY,
     room_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE room_members (
 );
 
 -- Create messages table
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     room_id INTEGER NOT NULL,
     sender_id INTEGER NOT NULL,

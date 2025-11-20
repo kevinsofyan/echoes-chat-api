@@ -1,0 +1,3 @@
+SET search_path TO echoes_chat;
+
+ALTER TABLE tokens ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

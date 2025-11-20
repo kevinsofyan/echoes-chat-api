@@ -36,6 +36,10 @@ migrate-up-local:
 migrate-down-local:
 	migrate -path migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}&search_path=${DB_SCHEMA}" down
 
+migrate-force:
+	@read -p "Force to which version? " version; \
+	migrate -path migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}&search_path=${DB_SCHEMA}" force $$version
+	
 migrate-create:
 	@read -p "Enter migration name: " name; \
     migrate create -ext sql -dir migrations -seq $$name

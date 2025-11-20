@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type RoomMemberRole string
 
@@ -12,8 +16,8 @@ const (
 
 type RoomMember struct {
 	BaseModel
-	RoomID   uint           `gorm:"not null" json:"room_id"`
-	UserID   uint           `gorm:"not null" json:"user_id"`
+	RoomID   uuid.UUID      `gorm:"type:uuid;not null" json:"room_id"`
+	UserID   uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
 	Role     RoomMemberRole `gorm:"type:varchar(20);not null;default:'member'" json:"role"`
 	JoinedAt time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP" json:"joined_at"`
 

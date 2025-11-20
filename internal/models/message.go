@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type MessageType string
 
 const (
@@ -12,13 +14,13 @@ const (
 
 type Message struct {
 	BaseModel
-	RoomID    uint        `gorm:"not null;index" json:"room_id"`
-	SenderID  uint        `gorm:"not null;index" json:"sender_id"`
+	RoomID    uuid.UUID   `gorm:"type:uuid;not null;index" json:"room_id"`
+	SenderID  uuid.UUID   `gorm:"type:uuid;not null;index" json:"sender_id"`
 	Content   string      `gorm:"type:text;not null" json:"content"`
 	Type      MessageType `gorm:"type:varchar(20);not null;default:'text'" json:"type"`
 	FileURL   string      `gorm:"size:255" json:"file_url,omitempty"`
 	IsEdited  bool        `gorm:"default:false" json:"is_edited"`
-	ReplyToID *uint       `gorm:"index" json:"reply_to_id,omitempty"`
+	ReplyToID *uuid.UUID  `gorm:"type:uuid;index" json:"reply_to_id,omitempty"`
 
 	// Relationships
 	Room    Room     `gorm:"foreignKey:RoomID" json:"room,omitempty"`

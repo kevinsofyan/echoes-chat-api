@@ -41,6 +41,7 @@ func main() {
 
 	c := container.NewContainer(db)
 	e := echo.New()
+	go c.Hub.Run()
 	routes.SetupRoutes(e, c.Handlers)
 
 	// Start server
