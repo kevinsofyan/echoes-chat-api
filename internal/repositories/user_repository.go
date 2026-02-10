@@ -17,6 +17,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetAll(ctx context.Context, limit, offset int) ([]models.User, error)
+	SearchByEmail(ctx context.Context, email string, limit, offset int) ([]models.User, error)
 	UpdateOnlineStatus(ctx context.Context, id uuid.UUID, isOnline bool) error
 }
 
@@ -79,6 +80,15 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 func (r *userRepository) GetAll(ctx context.Context, limit, offset int) ([]models.User, error) {
 	var users []models.User
 	err := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&users).Error
+	return users, err
+}
+
+func (r *userRepository) SearchByEmail(ctx context.Context, email string, limit, offset int) ([]models.User, error) {
+	var users []models.User
+	err := r.db.WithContext(ctx).
+		Where("email ILIKE ?", "%"+email+"%").
+		Limit(limit).Offset(offset).
+		Find(&users).Error
 	return users, err
 }
 

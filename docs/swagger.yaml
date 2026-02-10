@@ -1,5 +1,26 @@
 basePath: /api/v1
 definitions:
+  services.CreateRoomRequest:
+    properties:
+      created_by:
+        type: string
+      description:
+        type: string
+      member_ids:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      type:
+        enum:
+        - direct
+        - group
+        type: string
+    required:
+    - name
+    - type
+    type: object
   services.LoginRequest:
     properties:
       email:
@@ -75,6 +96,21 @@ paths:
       summary: Login user
       tags:
       - auth
+  /api/v1/auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - auth
   /api/v1/auth/register:
     post:
       consumes:
@@ -102,6 +138,417 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/v1/friends:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get friends list
+      tags:
+      - friendships
+  /api/v1/friends/{user_id}:
+    delete:
+      parameters:
+      - description: Friend user ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Unfriend a user
+      tags:
+      - friendships
+  /api/v1/friends/accept/{id}:
+    put:
+      parameters:
+      - description: Friendship ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Accept friend request
+      tags:
+      - friendships
+  /api/v1/friends/block/{user_id}:
+    post:
+      parameters:
+      - description: User ID to block
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Block a user
+      tags:
+      - friendships
+  /api/v1/friends/reject/{id}:
+    put:
+      parameters:
+      - description: Friendship ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reject friend request
+      tags:
+      - friendships
+  /api/v1/friends/request/{user_id}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID to send request to
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Send friend request
+      tags:
+      - friendships
+  /api/v1/friends/requests/pending:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pending friend requests (received)
+      tags:
+      - friendships
+  /api/v1/friends/requests/sent:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get sent friend requests
+      tags:
+      - friendships
+  /api/v1/rooms:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Room data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/services.CreateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new room
+      tags:
+      - rooms
+  /api/v1/rooms/{id}:
+    delete:
+      parameters:
+      - description: Room UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a room
+      tags:
+      - rooms
+    get:
+      parameters:
+      - description: Room UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get room by ID
+      tags:
+      - rooms
+  /api/v1/rooms/{room_id}/messages:
+    get:
+      parameters:
+      - description: Room UUID
+        in: path
+        name: room_id
+        required: true
+        type: string
+      - default: 50
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get messages for a room
+      tags:
+      - messages
+  /api/v1/rooms/direct/{user_id}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Other User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get or create direct chat with another user
+      tags:
+      - rooms
+  /api/v1/rooms/my:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get rooms for authenticated user
+      tags:
+      - rooms
   /api/v1/users:
     get:
       parameters:
@@ -275,6 +722,18 @@ paths:
       summary: Get current authenticated user
       tags:
       - users
+  /api/v1/ws/chat:
+    get:
+      parameters:
+      - description: JWT Token
+        in: query
+        name: token
+        required: true
+        type: string
+      responses: {}
+      summary: WebSocket endpoint for real-time chat
+      tags:
+      - websocket
 schemes:
 - http
 - https

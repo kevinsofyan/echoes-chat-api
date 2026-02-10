@@ -18,15 +18,23 @@ type Hub struct {
 	mu         sync.RWMutex
 }
 
+type MessageSender struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	FullName string    `json:"full_name"`
+}
+
 type Message struct {
-	ID        uuid.UUID  `json:"id,omitempty"`
-	RoomID    uuid.UUID  `json:"room_id"`
-	SenderID  uuid.UUID  `json:"sender_id"`
-	Content   string     `json:"content"`
-	Type      string     `json:"type"` // "text", "image", "file", "video", "audio"
-	FileURL   string     `json:"file_url,omitempty"`
-	ReplyToID *uuid.UUID `json:"reply_to_id,omitempty"`
-	CreatedAt time.Time  `json:"created_at,omitempty"`
+	ID         uuid.UUID      `json:"id,omitempty"`
+	RoomID     uuid.UUID      `json:"room_id"`
+	SenderID   uuid.UUID      `json:"sender_id,omitempty"`
+	Sender     *MessageSender `json:"sender,omitempty"`
+	Content    string         `json:"content"`
+	Type       string         `json:"type"` // "text", "image", "file", "video", "audio"
+	FileURL    string         `json:"file_url,omitempty"`
+	ReplyToID  *uuid.UUID     `json:"reply_to_id,omitempty"`
+	CreatedAt  time.Time      `json:"created_at,omitempty"`
+	Recipients []uuid.UUID    `json:"-"` // List of user IDs to receive the message
 }
 
 func NewHub() *Hub {
@@ -56,12 +64,36 @@ func (h *Hub) Run() {
 
 		case message := <-h.Broadcast:
 			h.mu.RLock()
-			for _, client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client.UserID)
+			// If recipients are specified, only send to them
+			if len(message.Recipients) > 0 {
+				for _, recipientID := range message.Recipients {
+					if client, ok := h.clients[recipientID]; ok {
+						select {
+						case client.send <- message:
+						default:
+							close(client.send)
+							h.mu.RUnlock() // Unlock before modifying map
+							h.mu.Lock()
+							delete(h.clients, client.UserID)
+							h.mu.Unlock()
+							h.mu.RLock() // Re-lock for reading
+						}
+					}
+				}
+			} else {
+				// Fallback to broadcast all (or maybe we should disable this?)
+				// For now, let's keep it but it shouldn't be used for chat messages
+				for _, client := range h.clients {
+					select {
+					case client.send <- message:
+					default:
+						close(client.send)
+						h.mu.RUnlock()
+						h.mu.Lock()
+						delete(h.clients, client.UserID)
+						h.mu.Unlock()
+						h.mu.RLock()
+					}
 				}
 			}
 			h.mu.RUnlock()

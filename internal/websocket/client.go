@@ -24,15 +24,17 @@ type Client struct {
 	hub            *Hub
 	send           chan *Message
 	messageService services.MessageService
+	roomService    services.RoomService
 }
 
-func NewClient(userID uuid.UUID, conn *websocket.Conn, hub *Hub, messageService services.MessageService) *Client {
+func NewClient(userID uuid.UUID, conn *websocket.Conn, hub *Hub, messageService services.MessageService, roomService services.RoomService) *Client {
 	return &Client{
 		UserID:         userID,
 		conn:           conn,
 		hub:            hub,
 		send:           make(chan *Message, 256),
 		messageService: messageService,
+		roomService:    roomService,
 	}
 }
 
@@ -82,9 +84,27 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
-		// Update message with saved data (ID, timestamps, etc.)
+		// Update message with saved data (ID, timestamps, sender info, etc.)
 		message.ID = savedMsg.ID
 		message.CreatedAt = savedMsg.CreatedAt
+		message.Sender = &MessageSender{
+			ID:       savedMsg.Sender.ID,
+			Username: savedMsg.Sender.Username,
+			FullName: savedMsg.Sender.FullName,
+		}
+
+		// Fetch room members to determine recipients
+		room, err := c.roomService.GetRoomByID(ctx, message.RoomID)
+		if err != nil {
+			log.Printf("error fetching room members: %v", err)
+			continue
+		}
+
+		recipients := make([]uuid.UUID, 0, len(room.Members))
+		for _, member := range room.Members {
+			recipients = append(recipients, member.UserID)
+		}
+		message.Recipients = recipients
 
 		// Broadcast to all clients in the room
 		c.hub.Broadcast <- &message

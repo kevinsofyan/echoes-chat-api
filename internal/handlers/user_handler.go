@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/kevinsofyan/echoes-chat-api/internal/models"
 	"github.com/kevinsofyan/echoes-chat-api/internal/services"
 	"github.com/kevinsofyan/echoes-chat-api/internal/utils"
 	"github.com/labstack/echo/v4"
@@ -81,10 +82,11 @@ func (h *UserHandler) GetUserByID(c echo.Context) error {
 }
 
 // GetAllUsers godoc
-// @Summary Get all users
+// @Summary Get all users or search by email
 // @Tags users
 // @Security BearerAuth
 // @Produce json
+// @Param email query string false "Email to search"
 // @Param limit query int false "Limit" default(10)
 // @Param offset query int false "Offset" default(0)
 // @Success 200 {object} map[string]interface{}
@@ -92,10 +94,19 @@ func (h *UserHandler) GetUserByID(c echo.Context) error {
 // @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/users [get]
 func (h *UserHandler) GetAllUsers(c echo.Context) error {
+	email := c.QueryParam("email")
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
 	offset, _ := strconv.Atoi(c.QueryParam("offset"))
 
-	users, err := h.userService.GetAllUsers(c.Request().Context(), limit, offset)
+	var users []models.User
+	var err error
+
+	if email != "" {
+		users, err = h.userService.SearchUsersByEmail(c.Request().Context(), email, limit, offset)
+	} else {
+		users, err = h.userService.GetAllUsers(c.Request().Context(), limit, offset)
+	}
+
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"error": err.Error(),
@@ -104,6 +115,11 @@ func (h *UserHandler) GetAllUsers(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"data": users,
+		"pagination": map[string]interface{}{
+			"limit":  limit,
+			"offset": offset,
+			"count":  len(users),
+		},
 	})
 }
 

@@ -20,12 +20,14 @@ func NewContainer(db *gorm.DB) *Container {
 	tokenRepo := repositories.NewTokenRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
 	roomRepo := repositories.NewRoomRepository(db)
+	friendshipRepo := repositories.NewFriendshipRepository(db)
 
 	// Initialize services
 	authService := services.NewAuthService(userRepo, tokenRepo)
 	userService := services.NewUserService(userRepo)
 	messageService := services.NewMessageService(messageRepo)
 	roomService := services.NewRoomService(roomRepo)
+	friendshipService := services.NewFriendshipService(friendshipRepo, userRepo)
 
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
@@ -33,15 +35,19 @@ func NewContainer(db *gorm.DB) *Container {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
-	wsHandler := handlers.NewWebSocketHandler(hub, messageService)
+	wsHandler := handlers.NewWebSocketHandler(hub, messageService, roomService)
 	roomHandler := handlers.NewRoomHandler(roomService)
+	messageHandler := handlers.NewMessageHandler(messageService)
+	friendshipHandler := handlers.NewFriendshipHandler(friendshipService)
 
 	// Group handlers
 	allHandlers := &routes.Handlers{
-		AuthHandler:      authHandler,
-		UserHandler:      userHandler,
-		WebSocketHandler: wsHandler,
-		RoomHandler:      roomHandler,
+		AuthHandler:       authHandler,
+		UserHandler:       userHandler,
+		WebSocketHandler:  wsHandler,
+		RoomHandler:       roomHandler,
+		MessageHandler:    messageHandler,
+		FriendshipHandler: friendshipHandler,
 	}
 
 	return &Container{

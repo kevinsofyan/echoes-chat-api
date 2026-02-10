@@ -14,10 +14,12 @@ import (
 )
 
 type Handlers struct {
-	AuthHandler      *handlers.AuthHandler
-	UserHandler      *handlers.UserHandler
-	WebSocketHandler *handlers.WebSocketHandler
-	RoomHandler      *handlers.RoomHandler
+	AuthHandler       *handlers.AuthHandler
+	UserHandler       *handlers.UserHandler
+	WebSocketHandler  *handlers.WebSocketHandler
+	RoomHandler       *handlers.RoomHandler
+	MessageHandler    *handlers.MessageHandler
+	FriendshipHandler *handlers.FriendshipHandler
 }
 
 func SetupRoutes(e *echo.Echo, h *Handlers) {
@@ -78,12 +80,22 @@ func SetupRoutes(e *echo.Echo, h *Handlers) {
 		rooms.POST("", h.RoomHandler.CreateRoom)
 		rooms.GET("/my", h.RoomHandler.GetMyRooms)
 		rooms.GET("/:id", h.RoomHandler.GetRoomByID)
+		rooms.DELETE("/:id", h.RoomHandler.DeleteRoom)
+		rooms.POST("/direct/:user_id", h.RoomHandler.GetOrCreateDirectChat)
+		rooms.GET("/:room_id/messages", h.MessageHandler.GetRoomMessages)
 	}
 
-	// WebSocket routes
-	ws := api.Group("/ws")
-	ws.Use(echojwt.WithConfig(jwtConfig))
+	// Friendship routes
+	friends := api.Group("/friends")
+	friends.Use(echojwt.WithConfig(jwtConfig))
 	{
-		ws.GET("/chat", h.WebSocketHandler.HandleWebSocket)
+		friends.GET("", h.FriendshipHandler.GetFriendsList)
+		friends.POST("/request/:user_id", h.FriendshipHandler.SendFriendRequest)
+		friends.PUT("/request/:id", h.FriendshipHandler.ManageFriendRequest)
+		friends.PUT("/block/:user_id", h.FriendshipHandler.ManageBlockUser)
+		friends.DELETE("/:user_id", h.FriendshipHandler.Unfriend)
 	}
+
+	// WebSocket routes (no middleware - token in query param)
+	api.GET("/ws/chat", h.WebSocketHandler.HandleWebSocket)
 }

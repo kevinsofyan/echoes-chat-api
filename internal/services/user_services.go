@@ -11,6 +11,7 @@ import (
 type UserService interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetAllUsers(ctx context.Context, limit, offset int) ([]models.User, error)
+	SearchUsersByEmail(ctx context.Context, email string, limit, offset int) ([]models.User, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest) (*models.User, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	SetOnlineStatus(ctx context.Context, id uuid.UUID, isOnline bool) error
@@ -38,6 +39,16 @@ func (s *userService) GetAllUsers(ctx context.Context, limit, offset int) ([]mod
 		offset = 0
 	}
 	return s.userRepo.GetAll(ctx, limit, offset)
+}
+
+func (s *userService) SearchUsersByEmail(ctx context.Context, email string, limit, offset int) ([]models.User, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.userRepo.SearchByEmail(ctx, email, limit, offset)
 }
 
 func (s *userService) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest) (*models.User, error) {
